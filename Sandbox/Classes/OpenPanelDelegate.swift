@@ -13,8 +13,8 @@ public class OpenPanelDelegate: NSObject, OpenPanelDelegateType {
 	public var fileURL: NSURL!
 	
 	public func panel(sender: AnyObject, shouldEnableURL url: NSURL) -> Bool {
-		let lhsComponents = self.fileURL.pathComponents as! [String]
-		let rhsComponents = url.pathComponents as! [String]
+		let lhsComponents = self.fileURL.pathComponents!
+		let rhsComponents = url.pathComponents!
 		if lhsComponents.count >= rhsComponents.count {
 			let count = rhsComponents.count
 			return lhsComponents[0..<count] == rhsComponents[0..<count]

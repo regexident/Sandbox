@@ -14,8 +14,8 @@ extension NSURL {
 		var prefix: [String] = []
 		var group: [NSURL] = []
 		var groups: [NSURL: [NSURL]] = [:]
-		let urlsAsComponents = urls.map { $0.URLByResolvingSymlinksInPath!.pathComponents as! [String] }
-		let sortedUrlsAsComponents = sorted(urlsAsComponents) {
+		let urlsAsComponents = urls.map { $0.URLByResolvingSymlinksInPath!.pathComponents! }
+		let sortedUrlsAsComponents = urlsAsComponents.sort() {
 			for (lhs, rhs) in zip($0, $1) {
 				if lhs != rhs {
 					return lhs < rhs
@@ -27,7 +27,7 @@ extension NSURL {
 			if prefix.count == 0 {
 				prefix = current
 			} else if group.count > 0 {
-				let previous = group.last!.pathComponents! as! [String]
+				let previous = group.last!.pathComponents!
 				let common = commonPrefixOfPathComponents_sbx(current, previous)
 				if common.count < prefix.count {
 					groups[NSURL.fileURLWithPathComponents(prefix)!] = group
@@ -62,21 +62,21 @@ extension NSURL {
 	}
 	
 	public func commonURLPrefixWith_sbx(url: NSURL) -> NSURL? {
-		let lhsPathComponents = self.URLByResolvingSymlinksInPath?.pathComponents as? [String]
-		let rhsPathComponents = url.URLByResolvingSymlinksInPath?.pathComponents as? [String]
+		let lhsPathComponents = self.URLByResolvingSymlinksInPath?.pathComponents
+		let rhsPathComponents = url.URLByResolvingSymlinksInPath?.pathComponents
 		if let lhsPathComponents = lhsPathComponents, rhsPathComponents = rhsPathComponents {
 			if !NSURL.existsCommonURLForFileURLsWithPathComponents_sbx(lhsPathComponents, rhsPathComponents) {
 				return nil
 			}
-			var common = NSURL.commonPrefixOfPathComponents_sbx(lhsPathComponents, rhsPathComponents)
+			let common = NSURL.commonPrefixOfPathComponents_sbx(lhsPathComponents, rhsPathComponents)
 			return NSURL.fileURLWithPathComponents(common)!
 		}
 		return nil
 	}
 	
 	public func existsCommonURLWith_sbx(url: NSURL) -> Bool {
-		let lhs = self.URLByResolvingSymlinksInPath?.pathComponents as? [String]
-		let rhs = url.URLByResolvingSymlinksInPath?.pathComponents as? [String]
+		let lhs = self.URLByResolvingSymlinksInPath?.pathComponents
+		let rhs = url.URLByResolvingSymlinksInPath?.pathComponents
 		if let lhs = lhs, rhs = rhs {
 			return NSURL.existsCommonURLForFileURLsWithPathComponents_sbx(lhs, rhs)
 		}
@@ -100,7 +100,7 @@ extension NSURL {
 	
 	private class func commonPrefixOfPathComponents_sbx(lhs: [String], _ rhs: [String]) -> ([String]) {
 		var prefix = [String]()
-		for (index, pair) in enumerate(zip(lhs, rhs)) {
+		for pair in zip(lhs, rhs) {
 			if pair.0 != pair.1 {
 				break
 			}

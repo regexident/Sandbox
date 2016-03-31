@@ -77,15 +77,16 @@ public class PermissionManager {
 		return accessible
 	}
 	
-	public func accessAndIfNeededAskUserForSecurityScopeForFileAtURL(fileURL: NSURL, closure: () -> ()) -> Bool {
+	public func accessAndIfNeededAskUserForSecurityScopeForFileAtURL(fileURL: NSURL, closure: () -> ()) throws -> Bool {
 		if !self.needsPermissionForFileAtURL(fileURL) {
 			closure()
 			return true
 		}
 		self.lock.lock()
-		let securityScopedURL = self.bookmarksManager.loadSecurityScopedURLForFileAtURL(fileURL) ?? self.askUserForSecurityScopeForFileAtURL(fileURL)
+		let bookmarkedURL = self.bookmarksManager.loadSecurityScopedURLForFileAtURL(fileURL)
+		let securityScopedURL = bookmarkedURL ?? self.askUserForSecurityScopeForFileAtURL(fileURL)
 		if (securityScopedURL != nil) && self.persistBookmarks {
-			self.bookmarksManager.saveSecurityScopedBookmarkForFileAtURL(securityScopedURL!)
+			try self.bookmarksManager.saveSecurityScopedBookmarkForFileAtURL(securityScopedURL!)
 		}
 		self.lock.unlock()
 		if securityScopedURL != nil {
