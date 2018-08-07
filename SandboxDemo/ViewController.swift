@@ -76,7 +76,7 @@ class ViewController: NSViewController {
 		self.hostWithoutSandboxButton.title = "❓"
 		let path = (self.textfield.stringValue as NSString).expandingTildeInPath
 		let fileURL = NSURL(fileURLWithPath: path)
-        self.accessFileInHostAppWithoutSecurityScope(fileURL) { success in
+        self.accessFileInHostAppWithoutSecurityScope(fileURL: fileURL) { success in
             self.hostWithoutSandboxButton.title = (success) ? "✅" : "⛔️"
         }
 	}
@@ -84,12 +84,11 @@ class ViewController: NSViewController {
 	@IBAction func accessFileInHostAppWithSandbox(sender: AnyObject) {
 		self.hostWithSandboxButton.title = "❓"
         let path = (self.textfield.stringValue as NSString).expandingTildeInPath
-		if let fileURL = NSURL(fileURLWithPath: path) {
-			self.accessFileInHostAppWithSecurityScope(fileURL) { success in
-				self.hostWithSandboxButton.title = (success) ? "✅" : "⛔️"
-			}
-		}
-	}
+		let fileURL = NSURL(fileURLWithPath: path)
+        self.accessFileInHostAppWithSecurityScope(fileURL: fileURL) { success in
+            self.hostWithSandboxButton.title = (success) ? "✅" : "⛔️"
+        }
+    }
 	
 	@IBAction func accessFileInXPCServiceWithoutSandbox(sender: AnyObject) {
 		self.serviceWithoutSandboxButton.title = "❓"
