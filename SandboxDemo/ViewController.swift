@@ -114,7 +114,7 @@ class ViewController: NSViewController {
 	}
 	
 	func accessFileInHostAppWithSecurityScope(fileURL: NSURL, callback: Callback) {
-        try? self.permissionManager.accessAndIfNeededAskUserForSecurityScopeForFileAtURL(fileURL: fileURL) {
+        _ = try? self.permissionManager.accessAndIfNeededAskUserForSecurityScopeForFileAtURL(fileURL: fileURL) {
 			let success = FileManager.default.isReadableFile(atPath: fileURL.path!)
 			callback(success)
 		}
@@ -137,7 +137,7 @@ class ViewController: NSViewController {
 		}
 		if let securityScopedURL = securityScopedURL {
             try? self.bookmarksManager.saveSecurityScopedBookmarkForFileAtURL(securityScopedFileURL: securityScopedURL)
-            self.permissionManager.accessSecurityScopedFileAtURL(fileURL: securityScopedURL) {
+            _ = self.permissionManager.accessSecurityScopedFileAtURL(fileURL: securityScopedURL) {
                 if let bookmark = try? fileURL.bookmarkData(options: NSURL.BookmarkCreationOptions(), includingResourceValuesForKeys:nil, relativeTo:nil) {
                     self.service.accessFile(withSecurityScope: bookmark) { fileURL, success in
 						callback(success)
