@@ -78,12 +78,10 @@ class BookmarksManagerTests: XCTestCase {
 		let fileURL = NSURL(fileURLWithPath: NSHomeDirectory())
 		let bookmark = try! self.bookmarksManager.securityScopedBookmarkForFileAtURL(fileURL: fileURL)!
 		try! self.bookmarksManager.saveSecurityScopedBookmark(securityScopedBookmark: bookmark)
-		let result = self.bookmarksManager.loadSecurityScopedBookmarkForFileAtURL(fileURL: fileURL)
-		if let result = result {
-			XCTAssertEqual(result, bookmark)
-		} else {
-			XCTFail("Unexpected nil")
-		}
+        guard let result = self.bookmarksManager.loadSecurityScopedBookmarkForFileAtURL(fileURL: fileURL) else {
+            XCTFail("Unexpected nil"); return
+        }
+        XCTAssertEqual(result, bookmark)
 	}
 	
 	func test__loadSecurityScopedBookmarkForFileURL__shouldReturnNilForNonExistingBookmark() {
@@ -96,24 +94,20 @@ class BookmarksManagerTests: XCTestCase {
 		let fileURL = NSURL(fileURLWithPath: NSHomeDirectory())
 		let bookmark = try! self.bookmarksManager.securityScopedBookmarkForFileAtURL(fileURL: fileURL)!
 		try! self.bookmarksManager.saveSecurityScopedBookmark(securityScopedBookmark: bookmark)
-		let result = self.bookmarksManager.loadSecurityScopedBookmarkForFileAtURL(fileURL: fileURL)
-		if let result = result {
-			XCTAssertEqual(result, bookmark)
-		} else {
-			XCTFail("Unexpected nil")
-		}
+        guard let result = self.bookmarksManager.loadSecurityScopedBookmarkForFileAtURL(fileURL: fileURL) else {
+            XCTFail("Unexpected nil"); return
+        }
+        XCTAssertEqual(result, bookmark)
 	}
 	
 	func test__loadSecurityScopedBookmarkForFileURL__shouldReturnBookmarkOfParentDirectory() {
 		let fileURL = NSURL(fileURLWithPath:NSHomeDirectory())
 		let bookmark = try! self.bookmarksManager.securityScopedBookmarkForFileAtURL(fileURL: fileURL)!
 		try! self.bookmarksManager.saveSecurityScopedBookmark(securityScopedBookmark: bookmark)
-        let result = self.bookmarksManager.loadSecurityScopedBookmarkForFileAtURL(fileURL: fileURL.appendingPathComponent("Foo")! as NSURL)
-		if let result = result {
-			XCTAssertEqual(result, bookmark)
-		} else {
-			XCTFail("Unexpected nil")
-		}
+        guard let result = self.bookmarksManager.loadSecurityScopedBookmarkForFileAtURL(fileURL: fileURL.appendingPathComponent("Foo")! as NSURL) else {
+            XCTFail("Unexpected nil"); return
+        }
+        XCTAssertEqual(result, bookmark)
 	}
 	
 	func test__bookmarkedFileURLs__shouldReturnProperFileURLs() {
