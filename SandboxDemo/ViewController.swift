@@ -120,7 +120,7 @@ class ViewController: NSViewController {
 		}
 	}
 	
-	func accessFileInXPCServiceWithoutSecurityScope(fileURL: NSURL, callback: Callback) {
+	func accessFileInXPCServiceWithoutSecurityScope(fileURL: NSURL, callback: @escaping Callback) {
 		self.service.accessFileWithoutSecurityScope(fileURL as URL) { fileURL, success in
 			callback(success)
 		}
