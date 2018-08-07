@@ -71,7 +71,7 @@ class BookmarksManagerTests: XCTestCase {
 	
 	func test__saveSecurityScopedBookmark_error__shouldReturnFalseForInvalidBookmark() {
 		let bookmark = NSData()
-		try! self.bookmarksManager.saveSecurityScopedBookmark(securityScopedBookmark: bookmark)
+        XCTAssertThrowsError(try self.bookmarksManager.saveSecurityScopedBookmark(securityScopedBookmark: bookmark))
 	}
 	
 	func test__saveSecurityScopedBookmark_error__shouldAddBookmark() {
