@@ -28,39 +28,39 @@ class BookmarksManagerTests: XCTestCase {
 
 	func test__bookmarkForFileURL_error__shouldNotReturnNilForExistingFile() {
 		let fileURL = NSURL(fileURLWithPath: NSHomeDirectory())
-		let result = try! self.bookmarksManager.bookmarkForFileAtURL(fileURL: fileURL)
-		XCTAssertNotNil(result)
+		let result = try? self.bookmarksManager.bookmarkForFileAtURL(fileURL: fileURL)
+		XCTAssertNotNil(result ?? nil)
 	}
 	
 	func test__bookmarkForFileURL_error__shouldReturnNilForNonExistingFile() {
 		let fileURL = NSURL(fileURLWithPath: "/!@#$%")
-		let result = try! self.bookmarksManager.bookmarkForFileAtURL(fileURL: fileURL)
-		XCTAssertNil(result)
+		let result = try? self.bookmarksManager.bookmarkForFileAtURL(fileURL: fileURL)
+		XCTAssertNil(result ?? nil)
 	}
 	
 	func test__securityScopedBookmarkForFileURL_error__shouldNotReturnNilForExistingFile() {
 		let fileURL = NSURL(fileURLWithPath: NSHomeDirectory())
-        let result = try! self.bookmarksManager.securityScopedBookmarkForFileAtURL(fileURL: fileURL)
-		XCTAssertNotNil(result)
+        let result = try? self.bookmarksManager.securityScopedBookmarkForFileAtURL(fileURL: fileURL)
+		XCTAssertNotNil(result ?? nil)
 	}
 	
 	func test__securityScopedBookmarkForFileURL_error__shouldReturnNilForNonExistingFile() {
 		let fileURL = NSURL(fileURLWithPath: "/!@#$%")
-		let result = try! self.bookmarksManager.securityScopedBookmarkForFileAtURL(fileURL: fileURL)
-		XCTAssertNil(result)
+		let result = try? self.bookmarksManager.securityScopedBookmarkForFileAtURL(fileURL: fileURL)
+		XCTAssertNil(result ?? nil)
 	}
 	
 	func test__fileURLFromSecurityScopedBookmark_error__shouldNotReturnNilForValidBookmark() {
 		let fileURL = NSURL(fileURLWithPath: NSHomeDirectory())
 		let bookmark = try! self.bookmarksManager.securityScopedBookmarkForFileAtURL(fileURL: fileURL)!
-        let result = try! self.bookmarksManager.fileURLFromSecurityScopedBookmark(bookmark: bookmark)
-		XCTAssertNotNil(result)
+        let result = try? self.bookmarksManager.fileURLFromSecurityScopedBookmark(bookmark: bookmark)
+		XCTAssertNotNil(result ?? nil)
 	}
 	
 	func test__fileURLFromSecurityScopedBookmark_error__shouldReturnNilForInvalidBookmark() {
 		let bookmark = NSData()
-        let result = try! self.bookmarksManager.fileURLFromSecurityScopedBookmark(bookmark: bookmark)
-		XCTAssertNil(result)
+        let result = try? self.bookmarksManager.fileURLFromSecurityScopedBookmark(bookmark: bookmark)
+		XCTAssertNil(result ?? nil)
 	}
 	
 	func test__saveSecurityScopedBookmark_error__shouldNotReturnTrueForValidBookmark() {
