@@ -10,7 +10,7 @@ import Foundation
 
 public class BookmarksManager {
 	
-	public let userDefaults: NSUserDefaults
+	public let userDefaults: UserDefaults
 	
 	public static let defaultManager: BookmarksManager = BookmarksManager()
 	
@@ -18,11 +18,11 @@ public class BookmarksManager {
 	
 	private var securityScopedBookmarksByFilePath: [String: NSData] {
 		get {
-			let bookmarksByFilePath = self.userDefaults.dictionaryForKey(BookmarksManager.userDefaultsBookmarksKey) as? [String: NSData]
+            let bookmarksByFilePath = self.userDefaults.dictionary(forKey: BookmarksManager.userDefaultsBookmarksKey) as? [String: NSData]
 			return bookmarksByFilePath ?? [:]
 		}
 		set {
-			self.userDefaults.setObject(newValue, forKey: BookmarksManager.userDefaultsBookmarksKey)
+			self.userDefaults.set(newValue, forKey: BookmarksManager.userDefaultsBookmarksKey)
 		}
 	}
 	
@@ -33,10 +33,10 @@ public class BookmarksManager {
 	}
 	
 	public init() {
-		self.userDefaults = NSUserDefaults.standardUserDefaults()
+		self.userDefaults = UserDefaults.standard
 	}
 	
-	public init(userDefaults: NSUserDefaults) {
+	public init(userDefaults: UserDefaults) {
 		self.userDefaults = userDefaults
 	}
 	
@@ -45,22 +45,22 @@ public class BookmarksManager {
 	}
 	
 	public func bookmarkForFileAtURL(fileURL: NSURL) throws -> NSData? {
-		let resolvesFileURL = fileURL.URLByStandardizingPath?.URLByResolvingSymlinksInPath
-		let bookmark = try resolvesFileURL?.bookmarkDataWithOptions(NSURLBookmarkCreationOptions(), includingResourceValuesForKeys: nil, relativeToURL: nil)
-		return bookmark
+		let resolvesFileURL = fileURL.standardizingPath?.resolvingSymlinksInPath()
+        let bookmark = try resolvesFileURL?.bookmarkData(options: NSURL.BookmarkCreationOptions(), includingResourceValuesForKeys: nil, relativeTo: nil)
+		return bookmark as NSData?
 	}
 	
 	public func securityScopedBookmarkForFileAtURL(fileURL: NSURL) throws -> NSData?{
-		let resolvesFileURL = fileURL.URLByStandardizingPath?.URLByResolvingSymlinksInPath
-		let bookmark = try resolvesFileURL?.bookmarkDataWithOptions(NSURLBookmarkCreationOptions.WithSecurityScope, includingResourceValuesForKeys: nil, relativeToURL: nil)
-		return bookmark
+		let resolvesFileURL = fileURL.standardizingPath?.resolvingSymlinksInPath()
+        let bookmark = try resolvesFileURL?.bookmarkData(options: NSURL.BookmarkCreationOptions.withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
+		return bookmark as NSData?
 	}
 	
 	public func fileURLFromSecurityScopedBookmark(bookmark: NSData) throws -> NSURL? {
-		let options: NSURLBookmarkResolutionOptions = [.WithSecurityScope, .WithoutUI]
+		let options: NSURL.BookmarkResolutionOptions = [.withSecurityScope, .withoutUI]
 		var stale: ObjCBool = false;
-		let fileURL = try NSURL(byResolvingBookmarkData: bookmark, options: options, relativeToURL: nil, bookmarkDataIsStale: &stale)
-		if (stale) {
+		let fileURL = try NSURL(resolvingBookmarkData: bookmark as Data, options: options, relativeTo: nil, bookmarkDataIsStale: &stale)
+		if (stale.boolValue) {
 			debugPrint("Bookmark is stale.")
 			return nil
 		}
@@ -68,9 +68,9 @@ public class BookmarksManager {
 	}
 	
 	public func loadSecurityScopedURLForFileAtURL(fileURL: NSURL) -> NSURL? {
-		if let bookmark = self.loadSecurityScopedBookmarkForFileAtURL(fileURL) {
+		if let bookmark = self.loadSecurityScopedBookmarkForFileAtURL(fileURL: fileURL) {
 			do {
-				return try self.fileURLFromSecurityScopedBookmark(bookmark)
+				return try self.fileURLFromSecurityScopedBookmark(bookmark: bookmark)
 			} catch let error {
 				debugPrint("Error: \(error)")
 			}
@@ -79,12 +79,12 @@ public class BookmarksManager {
 	}
 	
 	public func loadSecurityScopedBookmarkForFileAtURL(fileURL: NSURL) -> NSData? {
-		if var resolvedFileURL = fileURL.URLByStandardizingPath?.URLByResolvingSymlinksInPath {
+		if var resolvedFileURL = fileURL.standardizingPath?.resolvingSymlinksInPath() {
 			let bookmarksByFilePath = self.securityScopedBookmarksByFilePath
-			var securityScopedBookmark = bookmarksByFilePath[resolvedFileURL.path!]
-			while (securityScopedBookmark == nil) && (resolvedFileURL.pathComponents!.count > 1) {
-				resolvedFileURL = resolvedFileURL.URLByDeletingLastPathComponent!
-				securityScopedBookmark = bookmarksByFilePath[resolvedFileURL.path!]
+			var securityScopedBookmark = bookmarksByFilePath[resolvedFileURL.path]
+			while (securityScopedBookmark == nil) && (resolvedFileURL.pathComponents.count > 1) {
+				resolvedFileURL = resolvedFileURL.deletingLastPathComponent()
+				securityScopedBookmark = bookmarksByFilePath[resolvedFileURL.path]
 			}
 			return securityScopedBookmark
 		} else {
@@ -93,13 +93,13 @@ public class BookmarksManager {
 	}
 	
 	public func saveSecurityScopedBookmarkForFileAtURL(securityScopedFileURL: NSURL, error: NSErrorPointer = nil) throws {
-		if let bookmark = try self.securityScopedBookmarkForFileAtURL(securityScopedFileURL) {
-			return try self.saveSecurityScopedBookmark(bookmark)
+		if let bookmark = try self.securityScopedBookmarkForFileAtURL(fileURL: securityScopedFileURL) {
+			return try self.saveSecurityScopedBookmark(securityScopedBookmark: bookmark)
 		}
 	}
 	
 	public func saveSecurityScopedBookmark(securityScopedBookmark: NSData) throws {
-		if let fileURL = try self.fileURLFromSecurityScopedBookmark(securityScopedBookmark) {
+		if let fileURL = try self.fileURLFromSecurityScopedBookmark(bookmark: securityScopedBookmark) {
 			var securityScopedBookmarksByFilePath = self.securityScopedBookmarksByFilePath
 			securityScopedBookmarksByFilePath[fileURL.path!] = securityScopedBookmark
 			self.securityScopedBookmarksByFilePath = securityScopedBookmarksByFilePath
@@ -107,9 +107,9 @@ public class BookmarksManager {
 	}
 	
 	public func deleteSecurityScopedBookmarkForFileAtURL(fileURL: NSURL) {
-		if let resolvedFileURL = fileURL.URLByStandardizingPath?.URLByResolvingSymlinksInPath {
+        if let resolvedFileURL = fileURL.standardizingPath?.resolvingSymlinksInPath() {
 			var securityScopedBookmarksByFilePath = self.securityScopedBookmarksByFilePath
-			securityScopedBookmarksByFilePath.removeValueForKey(resolvedFileURL.path!)
+            securityScopedBookmarksByFilePath.removeValue(forKey: resolvedFileURL.path)
 			self.securityScopedBookmarksByFilePath = securityScopedBookmarksByFilePath
 		}
 	}

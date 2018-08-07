@@ -16,7 +16,7 @@ public class OpenPanelBuilder {
 	
 	init(applicationName: String? = nil) {
 		self.title = OpenPanelBuilder.defaultTitle()
-		self.message = OpenPanelBuilder.defaultMessage(applicationName)
+		self.message = OpenPanelBuilder.defaultMessage(applicationName: applicationName)
 		self.prompt = OpenPanelBuilder.defaultPrompt()
 	}
 	
@@ -36,7 +36,7 @@ public class OpenPanelBuilder {
 			openPanel.canChooseDirectories = true
 			openPanel.canChooseFiles = true
 			openPanel.canCreateDirectories = false
-			openPanel.extensionHidden = false
+			openPanel.isExtensionHidden = false
 			openPanel.showsHiddenFiles = false
 			
 			openPanel.title = self.title
@@ -44,21 +44,21 @@ public class OpenPanelBuilder {
 			openPanel.prompt = self.prompt
 		}
 		
-		if NSThread.isMainThread() {
+		if Thread.isMainThread {
 			closure()
 		} else {
-			dispatch_sync(dispatch_get_main_queue(), closure)
+            DispatchQueue.main.sync(execute: closure)
 		}
 		
 		return openPanel
 	}
 	
 	public static func applicationName() -> String {
-		let mainBundle = NSBundle.mainBundle()
-		if let displayName = mainBundle.objectForInfoDictionaryKey("CFBundleDisplayName") as? String {
+		let mainBundle = Bundle.main
+		if let displayName = mainBundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String {
 			return displayName
 		}
-		if let bundleName = mainBundle.objectForInfoDictionaryKey("CFBundleName") as? String {
+        if let bundleName = mainBundle.object(forInfoDictionaryKey: "CFBundleName") as? String {
 			return bundleName
 		}
 		return "Current App"

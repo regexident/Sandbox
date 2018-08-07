@@ -31,39 +31,39 @@ public class PermissionManager {
 	
 	public func needsPermissionForFileAtURL(fileURL: NSURL, error: NSErrorPointer = nil) -> Bool {
 		let reachable = fileURL.checkResourceIsReachableAndReturnError(error)
-		let readable = NSFileManager.defaultManager().isReadableFileAtPath(fileURL.path!)
+		let readable = FileManager.default.isReadableFile(atPath: fileURL.path!)
 		return reachable && !readable
 	}
 	
 	public func askUserForSecurityScopeForFileAtURL(fileURL: NSURL, error: NSErrorPointer = nil) -> NSURL? {
-		if !self.needsPermissionForFileAtURL(fileURL, error: error) {
+		if !self.needsPermissionForFileAtURL(fileURL: fileURL, error: error) {
 			return fileURL
 		}
 		
 		let openPanel = self.openPanel
 
 		if openPanel.directoryURL == nil {
-			openPanel.directoryURL = fileURL.URLByDeletingLastPathComponent
+			openPanel.directoryURL = fileURL.deletingLastPathComponent
 		}
 		
-		let openPanelDelegate = self.openPanelDelegate ?? OpenPanelDelegate()
+		let openPanelDelegate = self.openPanelDelegate
 		openPanelDelegate.fileURL = fileURL
 		openPanel.delegate = openPanelDelegate
 		
 		var securityScopedURL: NSURL? = nil
 		
 		let closure: () -> () = {
-			NSApplication.sharedApplication().activateIgnoringOtherApps(true)
-			if openPanel.runModal() == NSFileHandlingPanelOKButton {
-				securityScopedURL = openPanel.URL
+			NSApplication.shared.activate(ignoringOtherApps: true)
+			if openPanel.runModal().rawValue == NSFileHandlingPanelOKButton {
+				securityScopedURL = openPanel.url as NSURL?
 			}
 			openPanel.delegate = nil
 		}
 		
-		if NSThread.isMainThread() {
+		if Thread.isMainThread {
 			closure()
 		} else {
-			dispatch_sync(dispatch_get_main_queue(), closure)
+            DispatchQueue.main.sync(execute: closure)            
 		}
 		
 		return securityScopedURL
@@ -78,19 +78,19 @@ public class PermissionManager {
 	}
 	
 	public func accessAndIfNeededAskUserForSecurityScopeForFileAtURL(fileURL: NSURL, closure: () -> ()) throws -> Bool {
-		if !self.needsPermissionForFileAtURL(fileURL) {
+		if !self.needsPermissionForFileAtURL(fileURL: fileURL) {
 			closure()
 			return true
 		}
 		self.lock.lock()
-		let bookmarkedURL = self.bookmarksManager.loadSecurityScopedURLForFileAtURL(fileURL)
-		let securityScopedURL = bookmarkedURL ?? self.askUserForSecurityScopeForFileAtURL(fileURL)
+		let bookmarkedURL = self.bookmarksManager.loadSecurityScopedURLForFileAtURL(fileURL: fileURL)
+		let securityScopedURL = bookmarkedURL ?? self.askUserForSecurityScopeForFileAtURL(fileURL: fileURL)
 		if (securityScopedURL != nil) && self.persistBookmarks {
-			try self.bookmarksManager.saveSecurityScopedBookmarkForFileAtURL(securityScopedURL!)
+            try self.bookmarksManager.saveSecurityScopedBookmarkForFileAtURL(securityScopedFileURL: securityScopedURL!)
 		}
 		self.lock.unlock()
 		if securityScopedURL != nil {
-			return self.accessSecurityScopedFileAtURL(securityScopedURL!, closure: closure)
+			return self.accessSecurityScopedFileAtURL(fileURL: securityScopedURL!, closure: closure)
 		}
 		return false
 	}
