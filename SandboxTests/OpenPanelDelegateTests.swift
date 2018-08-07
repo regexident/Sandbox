@@ -21,26 +21,26 @@ class OpenPanelDelegateTests: XCTestCase {
 		
 		self.panel = NSOpenPanel()
 		
-		let fileURL = NSURL(fileURLWithPath: NSHomeDirectory())!
+		let fileURL = NSURL(fileURLWithPath: NSHomeDirectory())
 		self.delegate = OpenPanelDelegate()
 		self.delegate.fileURL = fileURL
     }
 	
 	func test__panel_shouldEnableURL__shouldReturnTrueForFileItself() {
-		let fileURL = self.delegate.fileURL
-		let result = self.delegate.panel(self.panel, shouldEnableURL: fileURL)
+		let fileURL = self.delegate.fileURL!
+        let result = self.delegate.panel(sender: self.panel, shouldEnableURL: fileURL)
 		XCTAssertTrue(result)
 	}
 	
 	func test__panel_shouldEnableURL__shouldReturnTrueForParentDirectory() {
-		let fileURL = self.delegate.fileURL.URLByDeletingLastPathComponent!
-		let result = self.delegate.panel(self.panel, shouldEnableURL:fileURL)
+		let fileURL = self.delegate.fileURL.deletingLastPathComponent! as NSURL
+        let result = self.delegate.panel(sender: self.panel, shouldEnableURL:fileURL)
 		XCTAssertTrue(result);
 	}
 	
 	func test__panel_shouldEnableURL__shouldReturnTrueForUnrelatedFile() {
-		let fileURL = self.delegate.fileURL.URLByDeletingLastPathComponent!.URLByAppendingPathComponent("Foobar")
-		let result = self.delegate.panel(self.panel, shouldEnableURL: fileURL)
+		let fileURL = self.delegate.fileURL.deletingLastPathComponent!.appendingPathComponent("Foobar") as NSURL
+        let result = self.delegate.panel(sender: self.panel, shouldEnableURL: fileURL)
 		XCTAssertFalse(result);
 	}
 	
