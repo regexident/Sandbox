@@ -12,7 +12,7 @@ import Sandbox
 
 class ViewController: NSViewController {
 	
-	typealias Callback = (Bool) -> ()
+	typealias Callback = (Bool) throws -> ()
 
 	@IBOutlet weak var textfield: NSTextField!
 	
@@ -30,15 +30,15 @@ class ViewController: NSViewController {
 	
 	override init(nibName nibNameOrNil: String!, bundle nibBundleOrNil: Bundle!) {
 		super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-		self.commonInit_ViewController()
+		self.commonInit()
 	}
 	
 	required init?(coder: NSCoder) {
 		super.init(coder: coder)
-		self.commonInit_ViewController()
+		self.commonInit()
 	}
 	
-	func commonInit_ViewController() {
+	func commonInit() {
 		let connection = NSXPCConnection(serviceName: "com.regexident.SandboxDemoService")
 		let remoteObjectInterface = NSXPCInterface(with: SandboxDemoServiceProtocol.self)
 		connection.remoteObjectInterface = remoteObjectInterface
@@ -68,88 +68,103 @@ class ViewController: NSViewController {
 		self.serviceWithSandboxButton.title = "❓"
 	}
 
-	@IBAction func clearSecurityScopedBookmarks(sender: AnyObject) {
+	@IBAction func clearSecurityScopedBookmarks(_ sender: AnyObject) {
 		self.bookmarksManager.clearSecurityScopedBookmarks()
 	}
 	
-	@IBAction func accessFileInHostAppWithoutSandbox(sender: AnyObject) {
+	@IBAction func accessFileInHostAppWithoutSandbox(_ sender: AnyObject) {
 		self.hostWithoutSandboxButton.title = "❓"
 		let path = (self.textfield.stringValue as NSString).expandingTildeInPath
-		let fileURL = NSURL(fileURLWithPath: path)
+		let fileURL = URL(fileURLWithPath: path)
         self.accessFileInHostAppWithoutSecurityScope(fileURL: fileURL) { success in
             self.hostWithoutSandboxButton.title = (success) ? "✅" : "⛔️"
         }
 	}
 	
-	@IBAction func accessFileInHostAppWithSandbox(sender: AnyObject) {
+	@IBAction func accessFileInHostAppWithSandbox(_ sender: AnyObject) {
 		self.hostWithSandboxButton.title = "❓"
         let path = (self.textfield.stringValue as NSString).expandingTildeInPath
-		let fileURL = NSURL(fileURLWithPath: path)
+		let fileURL = URL(fileURLWithPath: path)
         self.accessFileInHostAppWithSecurityScope(fileURL: fileURL) { success in
             self.hostWithSandboxButton.title = (success) ? "✅" : "⛔️"
         }
     }
 	
-	@IBAction func accessFileInXPCServiceWithoutSandbox(sender: AnyObject) {
+	@IBAction func accessFileInXPCServiceWithoutSandbox(_ sender: AnyObject) {
 		self.serviceWithoutSandboxButton.title = "❓"
         let path = (self.textfield.stringValue as NSString).expandingTildeInPath
-		let fileURL = NSURL(fileURLWithPath: path)
+		let fileURL = URL(fileURLWithPath: path)
         self.accessFileInXPCServiceWithoutSecurityScope(fileURL: fileURL) { success in
-            self.serviceWithoutSandboxButton.title = (success) ? "✅" : "⛔️"
+            DispatchQueue.main.async {
+                self.serviceWithoutSandboxButton.title = (success) ? "✅" : "⛔️"
+            }
         }
 	}
 	
-	@IBAction func accessFileInXPCServiceWithSandbox(sender: AnyObject) {
+	@IBAction func accessFileInXPCServiceWithSandbox(_ sender: AnyObject) {
 		self.serviceWithSandboxButton.title = "❓"
         let path = (self.textfield.stringValue as NSString).expandingTildeInPath
-		let fileURL = NSURL(fileURLWithPath: path)
-        self.accessFileInXPCServiceWithSecurityScope(fileURL: fileURL) { success in
-            self.serviceWithSandboxButton.title = (success) ? "✅" : "⛔️"
+		let fileURL = URL(fileURLWithPath: path)
+        do {
+            try self.accessFileInXPCServiceWithSecurityScope(fileURL: fileURL) { success in
+                DispatchQueue.main.async {
+                    self.serviceWithSandboxButton.title = (success) ? "✅" : "⛔️"
+                }
+            }
+        } catch let error {
+            print("Error:", error)
         }
     }
 
-	func accessFileInHostAppWithoutSecurityScope(fileURL: NSURL, callback: Callback) {
-		let success = FileManager.default.isReadableFile(atPath: fileURL.path!)
-		callback(success)
+	func accessFileInHostAppWithoutSecurityScope(fileURL: URL, callback: Callback) rethrows {
+		let success = FileManager.default.isReadableFile(atPath: fileURL.path)
+		try callback(success)
 	}
 	
-	func accessFileInHostAppWithSecurityScope(fileURL: NSURL, callback: Callback) {
-        _ = try? self.permissionManager.accessAndIfNeededAskUserForSecurityScopeForFileAtURL(fileURL: fileURL) {
-			let success = FileManager.default.isReadableFile(atPath: fileURL.path!)
-			callback(success)
+	func accessFileInHostAppWithSecurityScope(fileURL: URL, callback: Callback) rethrows {
+        _ = try? self.permissionManager.accessAndIfNeededAskUserForSecurityScope(fileURL: fileURL) {
+			let success = FileManager.default.isReadableFile(atPath: fileURL.path)
+			try callback(success)
 		}
 	}
 	
-	func accessFileInXPCServiceWithoutSecurityScope(fileURL: NSURL, callback: @escaping Callback) {
-		self.service.accessFileWithoutSecurityScope(fileURL as URL) { fileURL, success in
-			callback(success)
+	func accessFileInXPCServiceWithoutSecurityScope(fileURL: URL, callback: @escaping Callback) rethrows {
+        self.service.accessFileWithoutSecurityScope( fileURL) { fileURL, success in
+            do {
+                try callback(success)
+            } catch let error {
+                print("Error:", error)
+            }
 		}
 	}
 	
-    func accessFileInXPCServiceWithSecurityScope(fileURL: NSURL, callback: @escaping Callback) {
-        var securityScopedURL: NSURL? = self.bookmarksManager.loadSecurityScopedURLForFileAtURL(fileURL: fileURL)
-		if securityScopedURL == nil {
-			var error: NSError?
-            securityScopedURL = self.permissionManager.askUserForSecurityScopeForFileAtURL(fileURL: fileURL, error: &error)
-			if (securityScopedURL == nil) && (error != nil) {
-				NSApp.presentError(error!)
-			}
+    func accessFileInXPCServiceWithSecurityScope(fileURL: URL, callback: @escaping Callback) throws {
+        var securityScopedURLOrNil: URL? = try self.bookmarksManager.loadSecurityScopedURL(fileURL: fileURL)
+		if securityScopedURLOrNil == nil {
+            securityScopedURLOrNil = try self.permissionManager.askUserForSecurityScope(fileURL: fileURL)
 		}
-		if let securityScopedURL = securityScopedURL {
-            try? self.bookmarksManager.saveSecurityScopedBookmarkForFileAtURL(securityScopedFileURL: securityScopedURL)
-            _ = self.permissionManager.accessSecurityScopedFileAtURL(fileURL: securityScopedURL) {
-                if let bookmark = try? fileURL.bookmarkData(options: NSURL.BookmarkCreationOptions(), includingResourceValuesForKeys:nil, relativeTo:nil) {
-                    self.service.accessFile(withSecurityScope: bookmark) { fileURL, success in
-						callback(success)
-					}
-				} else {
-					callback(false)
-				}
-			}
-		} else {
-			callback(false)
+		guard let securityScopedURL = securityScopedURLOrNil else {
+            try callback(false)
+            return
 		}
+        do {
+            try self.bookmarksManager.saveSecurityScopedBookmark(securityScopedFileURL: securityScopedURL)
+            try self.permissionManager.accessSecurityScoped(fileURL: securityScopedURL) {
+                let bookmark = try fileURL.bookmarkData(
+                    options: URL.BookmarkCreationOptions(),
+                    includingResourceValuesForKeys: nil,
+                    relativeTo: nil
+                )
+                self.service.accessFile(withSecurityScope: bookmark) { fileURL, success in
+                    do {
+                        try callback(success)
+                    } catch let error {
+                        NSApp.presentError(error)
+                    }
+                }
+            }
+        } catch let error {
+            NSApp.presentError(error)
+        }
 	}
-	
 }
-
